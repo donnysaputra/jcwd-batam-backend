@@ -1,0 +1,12 @@
+{
+  "name": "http-node-api",
+  "version": "1.0.0",
+  "description": "simple api ",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "jordan",
+  "license": "ISC",
+  "keywords": []
+}
