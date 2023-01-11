@@ -3,27 +3,27 @@ const fs = require("fs");
 
 const savedJSON = require("../database/write-json");
 
-const productsController = {
-  getProducts: (req, res) => {
+const usersController = {
+  getUsers: (req, res) => {
     res.status(200).json({
-      message: "products data fetched",
-      result: db.products,
+      message: "users data fetched",
+      result: db.users,
     });
   },
-  addProduct: (req, res) => {
+  createUser: (req, res) => {
     const data = req.body;
-    db.products.push(data);
+    db.users.push(data);
     savedJSON(db);
     res.status(200).json({
-      message: "new product added",
+      message: "new user added",
       result: data,
     });
   },
-  editProduct: (req, res) => {
+  editUser: (req, res) => {
     const data = req.body;
     const id = req.params.id;
 
-    const findIndex = db.products.findIndex((val) => {
+    const findIndex = db.users.findIndex((val) => {
       return val.id == id;
     });
 
@@ -31,25 +31,24 @@ const productsController = {
       res.status(400).json({
         message: "id not found",
       });
-      return;
     }
 
-    db.products[findIndex] = {
-      ...db.products[findIndex],
+    db.users[findIndex] = {
+      ...db.users[findIndex],
       ...data,
     };
 
     savedJSON(db);
     res.status(200).json({
-      message: "product edited",
-      result: db.products[findIndex],
+      message: "user edited",
+      result: db.users[findIndex],
     });
   },
-  deleteProduct: (req, res) => {
+  deleteUser: (req, res) => {
     const data = req.body;
     const id = req.params.id;
 
-    const findIndex = db.products.findIndex((val) => {
+    const findIndex = db.users.findIndex((val) => {
       return val.id == id;
     });
 
@@ -57,16 +56,14 @@ const productsController = {
       res.status(400).json({
         message: "id not found",
       });
-      return;
     }
 
-    db.products.splice(findIndex, 1);
+    db.users.splice(findIndex, 1);
 
     savedJSON(db);
     res.status(200).json({
-      message: "product deleted",
+      message: "user deleted",
     });
   },
 };
-
-module.exports = productsController;
+module.exports = usersController;

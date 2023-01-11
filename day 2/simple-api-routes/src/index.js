@@ -9,6 +9,8 @@ const routes = require("./routes");
 
 app.use(express.json());
 
+// app.use(express.static("database"));
+
 app.use("/users", routes.usersRoute);
 app.use("/products", routes.productsRoute);
 
