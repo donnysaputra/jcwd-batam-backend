@@ -1,7 +1,7 @@
 const db = require("../models");
 const Users = db.user;
 const Suspend_User = db.suspend_user;
-
+const jwt = require("jsonwebtoken");
 const { Op } = require("sequelize");
 const usersController = {
   register: async (req, res) => {
@@ -146,6 +146,12 @@ const usersController = {
           newData.push(val);
         }
       });
+
+      //   [[occupation,"programmer"]] => balikin ke Object
+      //   Object.fromEntries(data)
+      //   {
+      //     occupation : "programmer"
+      //   }
 
       newData = Object.fromEntries(newData);
       console.log(newData);
