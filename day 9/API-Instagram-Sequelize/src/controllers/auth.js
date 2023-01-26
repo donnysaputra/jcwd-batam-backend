@@ -5,6 +5,7 @@ const User = db.user;
 const { sequelize } = require("../models");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+
 const authController = {
   login: async (req, res) => {
     try {
@@ -56,10 +57,10 @@ const authController = {
         },
       });
 
-      console.log(ifUserExist.dataValues);
+      // console.log(ifUserExist.dataValues);
 
       if (ifUserExist) {
-        res.status(400).json({
+        return res.status(400).json({
           message: "this email already registered",
         });
       }
@@ -67,7 +68,7 @@ const authController = {
       const result = await User.create({ ...req.body });
       await t.commit;
 
-      res.status(201).json({
+      return res.status(201).json({
         message: "new user registered",
         result: result,
       });

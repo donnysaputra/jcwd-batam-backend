@@ -6,8 +6,8 @@ const Comment = db.comment;
 const Like = db.post_like;
 const Post_Comment = db.post_comment;
 const { sequelize } = require("../models");
-const { literal } = require("sequelize");
-
+const mailer = require("../lib/mailer");
+const sharp = require("sharp");
 const postsController = {
   getPosts: async (req, res) => {
     try {
@@ -318,6 +318,74 @@ const postsController = {
         message: err,
       });
     }
+  },
+  addPost: async (req, res) => {
+    // console.log("halo");
+    let fileUpload = req.file;
+    console.log(req.file.filename);
+
+    res.send("test");
+  },
+
+  addPost2: async (req, res) => {
+    // console.log(req.file);
+    const id = req.params.id;
+    console.log(req.body);
+
+    let pic = await sharp(req.file.buffer).resize(250, 250).png().toBuffer();
+    await User.update(
+      {
+        avatar_buffer: pic,
+        avatar_url: process.env.render_avatar + id,
+      },
+      {
+        where: {
+          id: id,
+        },
+      }
+    );
+
+    res.send("test");
+  },
+
+  testPost: async (req, res) => {
+    console.log(req.files);
+
+    // const result = await Post.create({
+    //   image_url: process.env.render_image + filename,
+    // });
+
+    res.send("test");
+  },
+  renderImage: async (req, res) => {
+    try {
+      // const { _id } = req.query;
+      const id = req.params.id;
+      const avatar = await User.findOne({
+        where: {
+          id: id,
+        },
+      });
+      console.log(avatar.id);
+
+      res.set("Content-type", "image/png");
+
+      res.send(avatar.avatar_buffer);
+    } catch (err) {
+      res.send(err);
+    }
+  },
+  sendMail: async (req, res) => {
+    console.log("asd");
+    const email = "jordansumardi@gmail.com";
+    await mailer({
+      to: email,
+      subject: "Verify your account!",
+    });
+
+    return res.status(201).json({
+      message: "sent mail",
+    });
   },
 };
 
