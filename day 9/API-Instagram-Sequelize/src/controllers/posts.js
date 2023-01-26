@@ -385,6 +385,7 @@ const postsController = {
 
     return res.status(201).json({
       message: "sent mail",
+      // html:
     });
   },
 };
