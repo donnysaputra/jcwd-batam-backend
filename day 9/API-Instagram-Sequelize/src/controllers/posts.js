@@ -320,11 +320,22 @@ const postsController = {
     }
   },
   addPost: async (req, res) => {
-    // console.log("halo");
-    let fileUpload = req.file;
-    console.log(req.file.filename);
+    try {
+      const image_url = process.env.render_image + req.file.filename;
+      const { caption, user_id } = req.body;
+      const data = { image_url, caption, user_id, number_of_likes: 0 };
 
-    res.send("test");
+      const result = await Post.create({ ...data });
+
+      return res.status(200).json({
+        result,
+        message: "new post added",
+      });
+    } catch (err) {
+      return res.status(400).json({
+        message: err.toString(),
+      });
+    }
   },
 
   addPost2: async (req, res) => {

@@ -5,6 +5,10 @@ const User = db.user;
 const { sequelize } = require("../models");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const sharp = require("sharp");
+const mailer = require("../lib/mailer");
+const mustache = require("mustache");
+const fs = require("fs");
 
 const authController = {
   login: async (req, res) => {
@@ -60,9 +64,13 @@ const authController = {
       // console.log(ifUserExist.dataValues);
 
       if (ifUserExist) {
-        return res.status(400).json({
+        throw new Error({
           message: "this email already registered",
         });
+
+        // return res.status(400).json({
+        //   message: "this email already registered",
+        // });
       }
 
       const result = await User.create({ ...req.body });
@@ -116,16 +124,68 @@ const authController = {
     //   });
     // },
   },
-
   registerV2: async (req, res) => {
     const t = await sequelize.transaction();
-
     try {
-      const data = req.body;
+      const { email, password, username, name } = req.body;
+      //cek email
+      const isExist = await User.findOne({
+        where: {
+          [Op.or]: [
+            {
+              username: username,
+            },
+            {
+              email: email,
+            },
+          ],
+        },
+      });
 
-      data.password = bcrypt.hashSync(req.body.password, 10);
-      console.log(data.password);
+      // console.log(isExist);
+
+      if (isExist) {
+        return res.status(400).json({
+          message: "this email is already registered",
+        });
+      }
+
+      const hashPassword = bcrypt.hashSync(password, 10);
+      const data = {
+        username,
+        email,
+        password: hashPassword,
+        name,
+        verified: false,
+      };
+
       const result = await User.create({ ...data });
+      delete result.dataValues.password;
+
+      const token = await jwt.sign(
+        { ...result.dataValues },
+        process.env.secret,
+        {
+          expiresIn: "5m",
+        }
+      );
+
+      const template = fs
+        .readFileSync(__dirname + "/../templates/verify.html")
+        .toString();
+
+      const renderedTemplate = mustache.render(template, {
+        username,
+        verify_url: process.env.verificationLink + token,
+        full_name: name,
+      });
+
+      await mailer({
+        to: email,
+        subject: "Verify your account!",
+        html: renderedTemplate,
+      });
+
       await t.commit;
 
       res.status(201).json({
@@ -141,7 +201,6 @@ const authController = {
       });
     }
   },
-
   loginV2: async (req, res) => {
     try {
       const { username, password } = req.body;
@@ -160,15 +219,13 @@ const authController = {
       delete user.dataValues.password;
 
       if (checkPass) {
-        const token = jwt.sign({ ...user.dataValues }, "secret", {
-          expiresIn: "1m",
+        const token = jwt.sign({ id: user.dataValues.id }, process.env.secret, {
+          expiresIn: "2h",
         });
-        const tk = jwt.verify(token, "secret");
-        console.log(tk);
 
         return res.status(200).json({
           message: "user successfully logged in",
-          result: token,
+          result: { token, user },
         });
       }
       return res.status(400).json({
@@ -182,12 +239,132 @@ const authController = {
     }
   },
   keeplogin: async (req, res) => {
-    let token = req.headers.authorization;
-    token = token.split(" ")[1];
+    try {
+      let token = req.headers.authorization;
+      // token = token.split(" ")[1];
+      const oldUser = await jwt.verify(token, process.env.secret);
+      const newUser = await User.findByPk(oldUser.id);
 
-    console.log(token);
+      delete newUser.dataValues.avatar_buffer;
+      delete newUser.dataValues.password;
 
-    res.send(token);
+      return res.status(400).json({
+        message: "keep login fetched",
+        result: newUser,
+      });
+    } catch (err) {
+      return res.status(400).json({
+        message: err.toString(),
+      });
+    }
+  },
+  editProfile: async (req, res) => {
+    try {
+      const id = req.params.id;
+      const { username, name, description } = req.body;
+      const data = { username, name, description };
+
+      if (req.file) {
+        const pic = await sharp(req.file.buffer)
+          .resize(250, 250)
+          .png()
+          .toBuffer();
+
+        data.avatar_url = process.env.render_avatar + id;
+        data.avatar_buffer = pic;
+      }
+
+      await User.update(
+        {
+          ...data,
+        },
+        {
+          where: {
+            id,
+          },
+        }
+      );
+
+      const result = await User.findByPk(id);
+      delete result.dataValues.password;
+      delete result.dataValues.avatar_buffer;
+
+      return res.status(200).json({
+        message: "user edited",
+        result,
+      });
+    } catch (err) {
+      return res.status(400).json({
+        message: err.toString(),
+      });
+    }
+  },
+  renderAvatar: async (req, res) => {
+    try {
+      const id = req.params.id; //27
+      const avatar = await User.findOne({
+        where: {
+          id,
+        },
+      });
+      console.log(avatar.id);
+
+      res.set("Content-type", "image/png");
+
+      res.send(avatar.avatar_buffer);
+    } catch (err) {
+      res.send(err);
+    }
+  },
+  verifiedUser: async (req, res) => {
+    try {
+      const token = req.params.token;
+      const data = await jwt.verify(token, process.env.secret);
+      console.log(data);
+      await User.update(
+        {
+          verified: true,
+        },
+        {
+          where: {
+            id: data.id,
+          },
+        }
+      );
+      return res.status(400).json({
+        message: "verified",
+      });
+    } catch (err) {
+      return res.status(400).json({
+        message: err.toString(),
+      });
+    }
+  },
+  resendEmail: async (req, res) => {
+    // const href = "www.facebook.com";
+    const id = req.params.id;
+    console.log(id);
+    const user = await User.findByPk(id);
+    const template = fs
+      .readFileSync(__dirname + "/../templates/verify.html")
+      .toString();
+
+    const token = await jwt.sign({ id }, process.env.secret, {
+      expiresIn: "3m",
+    });
+
+    const renderedTemplate = mustache.render(template, {
+      username: user.dataValues.username,
+      verify_url: process.env.verificationLink + token,
+      full_name: user.dataValues.name,
+    });
+
+    await mailer({
+      to: user.dataValues.email,
+      subject: "Verify your account!",
+      html: renderedTemplate,
+    });
+    res.send("email sent");
   },
 };
 module.exports = authController;

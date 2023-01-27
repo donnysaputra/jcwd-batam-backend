@@ -20,6 +20,7 @@ module.exports = (sequelize, DataTypes) => {
       name: DataTypes.STRING,
       email: DataTypes.STRING,
       avatar_buffer: DataTypes.BLOB,
+      verified: DataTypes.BOOLEAN,
     },
     {
       sequelize,

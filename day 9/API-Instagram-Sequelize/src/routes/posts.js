@@ -16,7 +16,7 @@ router.post("/comments/", postsController.postComment);
 router.post(
   "/",
   fileUploader({
-    destinationFolder: "post_images",
+    destinationFolder: "POST",
     fileType: "image",
     prefix: "POST",
   }).single("image"),
