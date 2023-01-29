@@ -8,6 +8,7 @@ const Post_Comment = db.post_comment;
 const { sequelize } = require("../models");
 const mailer = require("../lib/mailer");
 const sharp = require("sharp");
+const { where } = require("sequelize");
 const postsController = {
   getPosts: async (req, res) => {
     try {
@@ -44,21 +45,8 @@ const postsController = {
             ],
           },
         ],
+        order: [["id", "DESC"]],
       });
-
-      // result.map(async (val) => {
-      //   const checkLiked = await Like.findOne({
-      //     where: {
-      //       userId: id,
-      //     },
-      //   });
-
-      //   if (checkLiked) {
-      //     val.liked = true;
-      //   } else {
-      //     val.liked = false;
-      //   }
-      // });
 
       return res.status(200).json({
         message: "fetched data posts",
@@ -74,6 +62,8 @@ const postsController = {
     try {
       const id = req.params.id;
 
+      console.log(id);
+
       const result = await Post.findOne({
         attributes: [
           "id",
@@ -82,7 +72,6 @@ const postsController = {
           "caption",
           "user_id",
         ],
-
         include: [
           {
             model: User,
@@ -103,12 +92,13 @@ const postsController = {
                 attributes: ["id", "username", "avatar_url"],
               },
             ],
-            where: {
-              id: id,
-            },
           },
         ],
+        where: {
+          id: id,
+        },
       });
+      console.log(result.dataValues);
 
       return res.status(200).json({
         message: "fetched data posts",
@@ -325,6 +315,7 @@ const postsController = {
       const { caption, user_id } = req.body;
       const data = { image_url, caption, user_id, number_of_likes: 0 };
 
+      console.log(req.body);
       const result = await Post.create({ ...data });
 
       return res.status(200).json({
@@ -402,3 +393,8 @@ const postsController = {
 };
 
 module.exports = postsController;
+
+// register dari instagram menggunakan fitur email, verifikasi
+// login ke instagram menggunakan token
+// edit profile page
+// add post

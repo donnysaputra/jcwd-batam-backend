@@ -9,6 +9,8 @@ const sharp = require("sharp");
 const mailer = require("../lib/mailer");
 const mustache = require("mustache");
 const fs = require("fs");
+const { log } = require("console");
+const { nanoid } = require("nanoid");
 
 const authController = {
   login: async (req, res) => {
@@ -127,6 +129,8 @@ const authController = {
   registerV2: async (req, res) => {
     const t = await sequelize.transaction();
     try {
+      console.log(req.body);
+
       const { email, password, username, name } = req.body;
       //cek email
       const isExist = await User.findOne({
@@ -145,9 +149,7 @@ const authController = {
       // console.log(isExist);
 
       if (isExist) {
-        return res.status(400).json({
-          message: "this email is already registered",
-        });
+        throw new Error("email already registered");
       }
 
       const hashPassword = bcrypt.hashSync(password, 10);
@@ -162,6 +164,8 @@ const authController = {
       const result = await User.create({ ...data });
       delete result.dataValues.password;
 
+      //data
+      //secret key
       const token = await jwt.sign(
         { ...result.dataValues },
         process.env.secret,
@@ -180,7 +184,7 @@ const authController = {
         full_name: name,
       });
 
-      await mailer({
+      mailer({
         to: email,
         subject: "Verify your account!",
         html: renderedTemplate,
@@ -188,7 +192,7 @@ const authController = {
 
       await t.commit;
 
-      res.status(201).json({
+      return res.status(201).json({
         message: "new user registered",
         result: result,
       });
@@ -197,7 +201,7 @@ const authController = {
 
       console.log(err);
       res.status(400).json({
-        message: err,
+        message: err.toString(),
       });
     }
   },
@@ -241,14 +245,19 @@ const authController = {
   keeplogin: async (req, res) => {
     try {
       let token = req.headers.authorization;
+      // console.log(token);
+
       // token = token.split(" ")[1];
       const oldUser = await jwt.verify(token, process.env.secret);
+      // console.log(oldUser);
       const newUser = await User.findByPk(oldUser.id);
 
       delete newUser.dataValues.avatar_buffer;
       delete newUser.dataValues.password;
 
-      return res.status(400).json({
+      // console.log("test");
+
+      return res.status(200).json({
         message: "keep login fetched",
         result: newUser,
       });
@@ -261,8 +270,8 @@ const authController = {
   editProfile: async (req, res) => {
     try {
       const id = req.params.id;
-      const { username, name, description } = req.body;
-      const data = { username, name, description };
+      const { username, name, description, email } = req.body;
+      const data = { username, name, description, email };
 
       if (req.file) {
         const pic = await sharp(req.file.buffer)
@@ -270,7 +279,7 @@ const authController = {
           .png()
           .toBuffer();
 
-        data.avatar_url = process.env.render_avatar + id;
+        data.avatar_url = process.env.render_avatar + nanoid();
         data.avatar_buffer = pic;
       }
 
@@ -301,10 +310,11 @@ const authController = {
   },
   renderAvatar: async (req, res) => {
     try {
-      const id = req.params.id; //27
+      // const id = req.params.id; //27
+      var fullUrl = req.protocol + "://" + req.get("host") + req.originalUrl;
       const avatar = await User.findOne({
         where: {
-          id,
+          avatar_url: fullUrl,
         },
       });
       console.log(avatar.id);
