@@ -14,6 +14,9 @@ const db = require("./models");
 app.use("/auth", authRoute);
 app.use("/events", eventRoute);
 
+app.use("/proof", express.static(`${__dirname}/public`));
+app.use("/images", express.static(`${__dirname}/assets`));
+
 app.listen(PORT, () => {
   console.log(`API IS RUNNING ON PORT ${PORT}`);
 });
