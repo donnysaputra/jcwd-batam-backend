@@ -8,19 +8,13 @@ app.get("/", (req, res) => {
 
 const db = mysql.createConnection({
   host: "mysql_server",
-  //   host: "host.docker.internal",
+  // host: "host.docker.internal",
+  // host: "localhost",
   user: "user",
   password: "password",
   database: "exercise",
   port: 3306,
 });
-
-// lewat network kita bisa menuliskan nama containernya
-// container menuju container lain lewat host
-// host
-// network
-// container 1
-// container 2
 
 db.connect((err) => {
   if (err) {
@@ -31,7 +25,7 @@ db.connect((err) => {
 });
 
 app.get("/nama", (req, res) => {
-  db.query("select * from new_table", (err, result) => {
+  db.query("select * from user", (err, result) => {
     if (err) {
       return res.status(400).send(err.toString());
     }
@@ -39,6 +33,6 @@ app.get("/nama", (req, res) => {
   });
 });
 
-app.listen(2500, () => {
+app.listen(2600, () => {
   console.log("server is running on port 2500");
 });

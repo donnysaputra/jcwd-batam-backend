@@ -11,7 +11,7 @@ services:
       context: .
       dockerfile: Dockerfile
     ports: 
-    - "2500:2500"
+    - "2500:2600"
     volumes:
       - .:/app
       - "/app/node-modules"
@@ -23,7 +23,7 @@ services:
   mysql_server: 
     image: mysql
     ports: 
-    - "4040:3306"
+    - "4041:3306"
     environment:
       - MYSQL_DATABASE=exercise
       - MYSQL_USER=user

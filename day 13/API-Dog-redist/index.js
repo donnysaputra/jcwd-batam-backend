@@ -5,6 +5,7 @@ const app = express();
 const axios = require("axios");
 
 const redis = require("redis");
+const DogRepository = require("./repository/dogRepo");
 
 const client = redis.createClient({
   url: `redis://localhost:6379`,
@@ -17,6 +18,17 @@ client.on("error", (error) => {
 
 app.listen(port, () => {
   console.log(`server running on port ${port}`);
+});
+
+app.get("/dogs/:breed/images", async (req, res) => {
+  try {
+    const dog = req.params.breed;
+    const result = await DogRepository.dog_images(dog);
+    console.log(result?.length);
+    return res.status(400).send(result);
+  } catch (err) {
+    return res.status(400).send(err.toString());
+  }
 });
 
 app.get("/dogs/:breed", async (req, res) => {

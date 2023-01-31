@@ -1,0 +1,56 @@
+docker 
+images => bentuk/sesuatu yang akan kita jalankan di container(api,fe,database)
+volume => menyimpan data yang dibutuhkan oleh container 
+container => menjalan image 
+
+
+step 
+codingan kalian (api)  diubah menjadi sebuah image 
+image akan diexecute supaya dapat berjalan 
+image yang diexecute berjalan di dalam sebuah container 
+
+terdapat 2 port 
+port milik host 
+port milik docker (bridge)
+
+mysql 
+docker pull mysql/mysql-server (pull image ke local docker) 
+docker container create --name (nama container) -p porthost:portdocker (image)
+docker container create --name mysql_server -p 4040:3306 mysql/mysql-server
+
+agar dapat menggunakan docker mysql di workbench
+kita harus membuat user yang bisa berjalan di localhost => host 
+127.0.0.1 => 192.
+
+create user 'user'@'%' identified by 'pass';
+grant all privileges on *.* to 'user'@'%' with grant option;
+flush privileges;
+
+
+create api => image 
+karena docker api akan berjalan di docker 
+maka tidak akan bisa mengkases localhost yang ada di host 
+1. membuat network 
+2. mengakses mysql lewat host . 
+    gunakan port dari host dan ubah host menjadi host.docker.internal
+
+docker file 
+execute docker file => docker build -t (nama image):(tag) . 
+docker create --name (nama container) -p (port host ):(port docker) (nama image)
+
+flow (2) : menggunakan mysql lewat host 
+1. setting host : "host.docker.internal" , port : "port host"
+
+menjalan docker api => akses ke host @localhost => akses port 4040 =>docker mysql yg ada di docker 4040:3306 
+
+gimana cara supaya docker api memiliki koneksi dengan docker mysql ? dengan menggunakan network 
+
+docker network create (nama network)
+
+docker network connect (nama network) (nama container) 
+
+host api = "nama container database" 
+port api = port docker 
+
+
+
