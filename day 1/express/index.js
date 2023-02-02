@@ -27,7 +27,7 @@ app.get("/products", (req, res) => {
     result: products,
   });
 });
-
+HEHEHEHE
 app.post("/products", (req, res) => {
   const data = req.body; //kita ambil data dari req.body
   console.log(data); // data kita tampilkan lewat console.log
